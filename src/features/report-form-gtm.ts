@@ -1,18 +1,148 @@
 import { getAssertedHtmlElement } from '@/utils/util';
+import {
+  string as vString,
+  object as vObject,
+  pipe as vPipe,
+  trim as VTrim,
+  email as VEmail,
+  minLength as VMinLength,
+  safeParse as VSafeParse,
+  transform as VTransform,
+  optional as vOptional,
+  InferOutput,
+} from 'valibot';
 
 /**
- * {"Voornaam":"","Achternaam":"","Gegevens-2":"","Telefoonnummer":"","E-mail-adres":"","g-recaptcha-response":""}
+ * {"Voornaam":"","Achternaam":"","Gegevens":"","Telefoonnummer":"","E-mail-adres":"","g-recaptcha-response":""}
  */
 
-const initReportFormGtm = () => {
-  const targetForm = getAssertedHtmlElement<HTMLFormElement>('#wf-form-Multi-Step---Report-Damage');
+const formId = '#wf-form-Multi-Step---Report-Damage';
 
-  setInterval(() => {
+const isRecaptchaAttached = (form: HTMLFormElement): boolean => {
+  return !!form.querySelector('[name="g-recaptcha-response"]');
+};
+
+const getFormSchema = (isRecaptchaPresent: boolean) => {
+  return vPipe(
+    vObject({
+      Voornaam: vPipe(vString(), VTrim()),
+      Achternaam: vPipe(vString(), VTrim()),
+      Gegevens: vOptional(vPipe(vString(), VTrim())),
+      Telefoonnummer: vOptional(vPipe(vString(), VTrim())),
+      'E-mail-adres': vPipe(vString(), VTrim(), VEmail()),
+      'g-recaptcha-response': isRecaptchaPresent
+        ? vPipe(vString(), VTrim(), VMinLength(10))
+        : vOptional(vString()),
+    }),
+    VTransform((input) => ({
+      email: input['E-mail-adres'],
+      phone_number: input['Telefoonnummer'],
+      address: { first_name: input['Voornaam'], last_name: input['Achternaam'] },
+    }))
+  );
+};
+
+// const vFormSchema = vPipe(
+//   vObject({
+//     Voornaam: vPipe(vString(), VTrim()),
+//     Achternaam: vPipe(vString(), VTrim()),
+//     Gegevens: vOptional(vPipe(vString(), VTrim())),
+//     Telefoonnummer: vPipe(vString(), VTrim()),
+//     'E-mail-adres': vPipe(vString(), VTrim(), VEmail()),
+//     'g-recaptcha-response': vPipe(vString(), VTrim(), VMinLength(10)),
+//   }),
+//   VTransform((input) => ({
+//     email: input['E-mail-adres'],
+//     phone_number: input['Telefoonnummer'],
+//     address: { first_name: input['Voornaam'], last_name: input['Achternaam'] },
+//   }))
+// );
+
+type FormDataType = InferOutput<ReturnType<typeof getFormSchema>>;
+
+const pushFormDataIntoGtm = (data: FormDataType) => {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: 'form_submit', 'gtm.elementId': formId, user_data: data });
+};
+
+const initReportFormGtm = () => {
+  const targetForm = getAssertedHtmlElement<HTMLFormElement>(formId);
+  const allInputElemets = Array.from(
+    targetForm.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+      'input, select, textarea'
+    )
+  );
+
+  const submitButton = getAssertedHtmlElement<HTMLButtonElement>('[type=submit]', targetForm);
+
+  submitButton.type = 'button';
+
+  const isRecaptchaPresent = isRecaptchaAttached(targetForm);
+
+  const schema = getFormSchema(isRecaptchaPresent);
+
+  submitButton.addEventListener('click', () => {
+    for (const inputEl of allInputElemets) {
+      if (inputEl.checkValidity()) continue;
+      inputEl.reportValidity();
+      return;
+    }
+
     const formDataObj = new FormData(targetForm);
     const formData = Object.fromEntries(formDataObj.entries());
 
-    console.log(JSON.stringify(formData));
-  }, 3000);
+    const validatedDataObj = VSafeParse(schema, formData);
+
+    if (!validatedDataObj.success) {
+      const issues = validatedDataObj.issues;
+
+      const recaptchIssue =
+        isRecaptchaPresent &&
+        !!issues.find((issue) => issue.path?.some((p) => p.key === 'g-recaptcha-response'));
+
+      if (recaptchIssue) {
+        alert('Please confirm you’re not a robot.');
+        return;
+      }
+
+      console.error(JSON.stringify(issues));
+
+      return;
+    }
+
+    const validatedData = validatedDataObj.output;
+
+    pushFormDataIntoGtm(validatedData);
+
+    submitButton.type = 'submit';
+
+    submitButton.click();
+  });
 };
 
 initReportFormGtm();
+
+/**
+ * Temp Code
+ */
+
+/**
+ * 
+const temp = () => {
+  const trigger = document.querySelector('h1.contact_heading-h2');
+  
+  trigger?.addEventListener('click', () => {
+    pushFormDataIntoGtm({
+      email: 'email@email.com',
+      address: { first_name: 'Zarif Test', last_name: 'Tajwar Test' },
+      phone_number: '12345',
+    });
+    console.log('pushed');
+  });
+  
+  console.log('Trigger initialized');
+};
+
+temp();
+
+*/

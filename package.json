@@ -22,6 +22,7 @@
     "es-toolkit": "^1.16.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-serve": "^1.1.1"
+    "rollup-plugin-serve": "^1.1.1",
+    "valibot": "^1.0.0"
   }
 }
