@@ -9,7 +9,9 @@ import servePlugin from 'rollup-plugin-serve';
 import css from 'rollup-plugin-import-css';
 
 export default defineConfig({
-  input: {},
+  input: {
+    'report-form-gtm': './src/features/report-form-gtm.ts',
+  },
   output: {
     format: 'module',
     dir: 'dist',
