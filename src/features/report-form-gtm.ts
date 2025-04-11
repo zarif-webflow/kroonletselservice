@@ -12,10 +12,6 @@ import {
   InferOutput,
 } from 'valibot';
 
-/**
- * {"Voornaam":"","Achternaam":"","Gegevens":"","Telefoonnummer":"","E-mail-adres":"","g-recaptcha-response":""}
- */
-
 const formId = '#wf-form-Multi-Step---Report-Damage';
 
 const isRecaptchaAttached = (form: HTMLFormElement): boolean => {
@@ -42,27 +38,20 @@ const getFormSchema = (isRecaptchaPresent: boolean) => {
   );
 };
 
-// const vFormSchema = vPipe(
-//   vObject({
-//     Voornaam: vPipe(vString(), VTrim()),
-//     Achternaam: vPipe(vString(), VTrim()),
-//     Gegevens: vOptional(vPipe(vString(), VTrim())),
-//     Telefoonnummer: vPipe(vString(), VTrim()),
-//     'E-mail-adres': vPipe(vString(), VTrim(), VEmail()),
-//     'g-recaptcha-response': vPipe(vString(), VTrim(), VMinLength(10)),
-//   }),
-//   VTransform((input) => ({
-//     email: input['E-mail-adres'],
-//     phone_number: input['Telefoonnummer'],
-//     address: { first_name: input['Voornaam'], last_name: input['Achternaam'] },
-//   }))
-// );
-
 type FormDataType = InferOutput<ReturnType<typeof getFormSchema>>;
 
+let isGtmAlreadyRan = false;
+
 const pushFormDataIntoGtm = (data: FormDataType) => {
+  if (isGtmAlreadyRan) return;
+
+  isGtmAlreadyRan = true;
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ event: 'form_submit', 'gtm.elementId': formId, user_data: data });
+  window.dataLayer.push({
+    event: 'form_submit',
+    'gtm.elementId': formId,
+    user_data: data,
+  });
 };
 
 const initReportFormGtm = () => {
@@ -81,7 +70,13 @@ const initReportFormGtm = () => {
 
   const schema = getFormSchema(isRecaptchaPresent);
 
+  let successClickedOnce = false;
+
+  let validatedData: FormDataType | undefined = undefined;
+
   submitButton.addEventListener('click', () => {
+    if (successClickedOnce) return;
+
     for (const inputEl of allInputElemets) {
       if (inputEl.checkValidity()) continue;
       inputEl.reportValidity();
@@ -110,39 +105,21 @@ const initReportFormGtm = () => {
       return;
     }
 
-    const validatedData = validatedDataObj.output;
-
-    pushFormDataIntoGtm(validatedData);
+    validatedData = validatedDataObj.output;
 
     submitButton.type = 'submit';
 
+    successClickedOnce = true;
+
     submitButton.click();
+  });
+
+  targetForm.addEventListener('submit', () => {
+    if (!validatedData) {
+      throw new Error('Somthing went wrong with GTM Target Data!');
+    }
+    pushFormDataIntoGtm(validatedData);
   });
 };
 
 initReportFormGtm();
-
-/**
- * Temp Code
- */
-
-/**
- * 
-const temp = () => {
-  const trigger = document.querySelector('h1.contact_heading-h2');
-  
-  trigger?.addEventListener('click', () => {
-    pushFormDataIntoGtm({
-      email: 'email@email.com',
-      address: { first_name: 'Zarif Test', last_name: 'Tajwar Test' },
-      phone_number: '12345',
-    });
-    console.log('pushed');
-  });
-  
-  console.log('Trigger initialized');
-};
-
-temp();
-
-*/
