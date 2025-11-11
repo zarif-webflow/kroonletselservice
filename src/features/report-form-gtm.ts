@@ -1,18 +1,19 @@
-import { getAssertedHtmlElement } from '@/utils/util';
 import {
-  string as vString,
-  object as vObject,
-  pipe as vPipe,
-  trim as VTrim,
   email as VEmail,
+  type InferOutput,
   minLength as VMinLength,
-  safeParse as VSafeParse,
-  transform as VTransform,
+  object as vObject,
   optional as vOptional,
-  InferOutput,
-} from 'valibot';
+  pipe as vPipe,
+  safeParse as VSafeParse,
+  string as vString,
+  transform as VTransform,
+  trim as VTrim,
+} from "valibot";
 
-const formId = '#wf-form-Multi-Step---Report-Damage';
+import { getAssertedHtmlElement } from "@/utils/util";
+
+const formId = "#wf-form-Multi-Step---Report-Damage";
 
 const isRecaptchaAttached = (form: HTMLFormElement): boolean => {
   return !!form.querySelector('[name="g-recaptcha-response"]');
@@ -25,15 +26,15 @@ const getFormSchema = (isRecaptchaPresent: boolean) => {
       Achternaam: vPipe(vString(), VTrim()),
       Gegevens: vOptional(vPipe(vString(), VTrim())),
       Telefoonnummer: vOptional(vPipe(vString(), VTrim())),
-      'E-mail-adres': vPipe(vString(), VTrim(), VEmail()),
-      'g-recaptcha-response': isRecaptchaPresent
+      "E-mail-adres": vPipe(vString(), VTrim(), VEmail()),
+      "g-recaptcha-response": isRecaptchaPresent
         ? vPipe(vString(), VTrim(), VMinLength(10))
         : vOptional(vString()),
     }),
     VTransform((input) => ({
-      email: input['E-mail-adres'],
-      phone_number: input['Telefoonnummer'],
-      address: { first_name: input['Voornaam'], last_name: input['Achternaam'] },
+      email: input["E-mail-adres"],
+      phone_number: input["Telefoonnummer"],
+      address: { first_name: input["Voornaam"], last_name: input["Achternaam"] },
     }))
   );
 };
@@ -48,8 +49,8 @@ const pushFormDataIntoGtm = (data: FormDataType) => {
   isGtmAlreadyRan = true;
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({
-    event: 'form_submit',
-    'gtm.elementId': formId,
+    event: "form_submit",
+    "gtm.elementId": formId,
     user_data: data,
   });
 };
@@ -58,13 +59,13 @@ const initReportFormGtm = () => {
   const targetForm = getAssertedHtmlElement<HTMLFormElement>(formId);
   const allInputElemets = Array.from(
     targetForm.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-      'input, select, textarea'
+      "input, select, textarea"
     )
   );
 
-  const submitButton = getAssertedHtmlElement<HTMLButtonElement>('[type=submit]', targetForm);
+  const submitButton = getAssertedHtmlElement<HTMLButtonElement>("[type=submit]", targetForm);
 
-  submitButton.type = 'button';
+  submitButton.type = "button";
 
   const isRecaptchaPresent = isRecaptchaAttached(targetForm);
 
@@ -74,7 +75,7 @@ const initReportFormGtm = () => {
 
   let validatedData: FormDataType | undefined = undefined;
 
-  submitButton.addEventListener('click', () => {
+  submitButton.addEventListener("click", () => {
     if (successClickedOnce) return;
 
     for (const inputEl of allInputElemets) {
@@ -93,10 +94,10 @@ const initReportFormGtm = () => {
 
       const recaptchIssue =
         isRecaptchaPresent &&
-        !!issues.find((issue) => issue.path?.some((p) => p.key === 'g-recaptcha-response'));
+        !!issues.find((issue) => issue.path?.some((p) => p.key === "g-recaptcha-response"));
 
       if (recaptchIssue) {
-        alert('Please confirm you’re not a robot.');
+        alert("Please confirm you’re not a robot.");
         return;
       }
 
@@ -107,16 +108,16 @@ const initReportFormGtm = () => {
 
     validatedData = validatedDataObj.output;
 
-    submitButton.type = 'submit';
+    submitButton.type = "submit";
 
     successClickedOnce = true;
 
     submitButton.click();
   });
 
-  targetForm.addEventListener('submit', () => {
+  targetForm.addEventListener("submit", () => {
     if (!validatedData) {
-      throw new Error('Somthing went wrong with GTM Target Data!');
+      throw new Error("Somthing went wrong with GTM Target Data!");
     }
     pushFormDataIntoGtm(validatedData);
   });

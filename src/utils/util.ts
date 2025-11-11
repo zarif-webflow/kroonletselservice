@@ -3,7 +3,7 @@ type NonUndefined<T> = T extends undefined ? never : T;
 class AssertionError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AssertionError';
+    this.name = "AssertionError";
   }
 }
 
@@ -35,7 +35,7 @@ export const wait = async (delayInMs: number) => new Promise((res) => setTimeout
 
 export const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   // Remove the leading # if present
-  if (hex.startsWith('#')) {
+  if (hex.startsWith("#")) {
     hex = hex.slice(1);
   }
 
@@ -47,9 +47,9 @@ export const hexToRgb = (hex: string): { r: number; g: number; b: number } | nul
   // If the hex code is 3 characters long, convert it to 6 characters
   if (hex.length === 3) {
     hex = hex
-      .split('')
+      .split("")
       .map((char) => char + char)
-      .join('');
+      .join("");
   }
 
   // Parse the hex code into RGB values
