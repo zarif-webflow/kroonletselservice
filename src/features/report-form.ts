@@ -1,4 +1,7 @@
+import { wait } from "@finsweet/ts-utils";
 import { getHtmlElement } from "@taj-wf/utils";
+
+const formId = "#wf-form-Multi-Step---Report-Damage";
 
 const getFormData = async (responseId: string, apiURL: string) => {
   try {
@@ -22,6 +25,15 @@ const getFormData = async (responseId: string, apiURL: string) => {
   }
 };
 
+type TargetDataType = {
+  email: string;
+  phone_number: string | undefined;
+  address: {
+    first_name: string;
+    last_name: string;
+  };
+};
+
 const init = () => {
   const apiUrl = getHtmlElement({ selector: "[data-api-url]" })?.getAttribute("data-api-url");
   if (!apiUrl) {
@@ -40,9 +52,30 @@ const init = () => {
     if (event.data.type === "form-submit") {
       const responseId = event.data.responseId;
 
+      // wait for 2 seconds to ensure the data is available in the backend
+      await wait(2000);
+
       const formData = await getFormData(responseId, apiUrl);
 
       if (!formData) return;
+
+      const targetData: TargetDataType = {
+        email: formData.email,
+        phone_number: formData.phoneNumber,
+        address: {
+          first_name: formData.name.split(" ")[0] || "",
+          last_name: formData.name.split(" ").slice(1).join(" ") || "",
+        },
+      };
+
+      console.debug(targetData, "targetData");
+
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "form_submit",
+        "gtm.elementId": formId,
+        user_data: targetData,
+      });
     }
   });
 };
