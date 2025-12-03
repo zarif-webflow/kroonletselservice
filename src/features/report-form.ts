@@ -57,7 +57,10 @@ const init = () => {
 
       const formData = await getFormData(responseId, apiUrl);
 
-      if (!formData) return;
+      if (!formData) {
+        console.error("ERROR: FORM DATA wasn't available when this request was made.");
+        return;
+      }
 
       const targetData: TargetDataType = {
         email: formData.email,
