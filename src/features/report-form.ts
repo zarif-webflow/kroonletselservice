@@ -15,13 +15,17 @@ const getFormData = async (responseId: string, apiURL: string) => {
     if (!response.ok) {
       const data = await response.json();
       console.error("Error while fetching form data for GTM:", data.error);
+      console.error("Response status:", response.status);
       return;
     }
     const data = await response.json().then((res) => res.data);
 
     return data as { name: string; email: string; phoneNumber: string };
-  } catch {
-    throw new Error("Something went wrong while fetching form data for Google Tag Manager!");
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      "Something went wrong while fetching form data for Google Tag Manager! " + errorMessage
+    );
   }
 };
 
