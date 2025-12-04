@@ -188,6 +188,12 @@ const init = () => {
 
       const formData = formDataResponse as ApiFormData;
 
+      if (!formData.email) {
+        const errorMessage = "This form submission does not contain an email address!";
+        console.debug("✅ " + errorMessage);
+        return;
+      }
+
       const targetData: TargetDataType = {
         email: formData.email,
         phone_number: formData.phoneNumber,
