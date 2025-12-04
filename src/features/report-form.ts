@@ -34,13 +34,26 @@ const getFormData = async (
       body: JSON.stringify({ formResponseId: responseId }),
     });
     if (!response.ok) {
-      const data = await response.json();
+      try {
+        const data = await response.json();
 
-      if (typeof data.error === "string") {
+        if (typeof data.error === "string") {
+          const errorMessage = prepareErrorMessage(
+            responseId,
+            response.status,
+            `While fetching: ${data.error}`
+          );
+
+          return {
+            error: new Error(errorMessage),
+            message: errorMessage,
+          };
+        }
+      } catch {
         const errorMessage = prepareErrorMessage(
           responseId,
           response.status,
-          `While fetching: ${data.error}`
+          `While fetching: API returned status ${response.status}`
         );
 
         return {
