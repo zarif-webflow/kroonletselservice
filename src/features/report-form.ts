@@ -93,21 +93,21 @@ export const getSetupData = () => {
   const script = getActiveScript(import.meta.url);
 
   if (!script) {
-    console.error("Something went wrong while getting the script tag!");
+    console.error("❌ Something went wrong while getting the script tag!");
     return null;
   }
 
   const apiUrl = script.getAttribute("data-api-url");
 
   if (!apiUrl) {
-    console.error("API URL not found in data-api-url attribute");
+    console.error("❌ API URL not found in data-api-url attribute");
     return null;
   }
 
   const sentryDsn = script.getAttribute("data-sentry-dsn");
 
   if (!sentryDsn) {
-    console.error("Sentry DSN not found in data-sentry-dsn attribute");
+    console.error("❌ Sentry DSN not found in data-sentry-dsn attribute");
     return null;
   }
 
@@ -139,15 +139,15 @@ const init = () => {
     if (event.origin !== "https://form.typeform.com") return;
 
     if (!event.data) {
-      console.error("No data in message event from Typeform");
+      console.error("❌ No data in message event from Typeform");
       return;
     }
 
     if (event.data.type === "form-submit") {
       if (isGTMLoaded()) {
-        console.debug("GTM was found while submitting typeform.");
+        console.debug("✅ GTM was found while submitting typeform.");
       } else {
-        console.error("GTM was NOT found while submitting typeform.");
+        console.error("❌ GTM was NOT found while submitting typeform.");
         return;
       }
 
@@ -155,7 +155,7 @@ const init = () => {
 
       if (typeof responseId !== "string") {
         const errorMessage = "No responseId found in the form-submit event data!";
-        console.error(errorMessage);
+        console.error("❌ " + errorMessage);
         captureException(new Error(errorMessage));
         return;
       }
@@ -166,12 +166,12 @@ const init = () => {
       const formDataResponse = await getFormData(responseId, apiUrl);
 
       if ("error" in formDataResponse) {
-        console.error(formDataResponse.message);
+        console.error("❌ " + formDataResponse.message);
         captureException(formDataResponse.error);
         return;
       }
 
-      console.debug(`Typeform Data was successfully fetched!`);
+      console.debug(`✅ Typeform Data was successfully fetched!`);
 
       const formData = formDataResponse as ApiFormData;
 
@@ -192,6 +192,8 @@ const init = () => {
       });
     }
   });
+
+  console.debug("✅ Report Form script initialized!");
 };
 
 init();
