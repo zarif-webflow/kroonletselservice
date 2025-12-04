@@ -12,6 +12,6 @@ export const initSentry = (sentryDsn: string) => {
   });
 };
 
-export const captureException = (error: unknown) => {
-  Sentry.captureException(error, { tags: { capture: true } });
+export const captureException = (error: unknown, fingerprint: string[]) => {
+  Sentry.captureException(error, { tags: { capture: true }, fingerprint });
 };

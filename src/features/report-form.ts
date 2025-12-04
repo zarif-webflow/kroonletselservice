@@ -169,7 +169,7 @@ const init = () => {
       if (typeof responseId !== "string") {
         const errorMessage = "No responseId found in the form-submit event data!";
         console.error("❌ " + errorMessage);
-        captureException(new Error(errorMessage));
+        captureException(new Error(errorMessage), ["no-response-id " + Date.now().toString()]);
         return;
       }
 
@@ -180,7 +180,7 @@ const init = () => {
 
       if ("error" in formDataResponse) {
         console.error("❌ " + formDataResponse.message);
-        captureException(formDataResponse.error);
+        captureException(formDataResponse.error, ["form-data-error " + responseId]);
         return;
       }
 
