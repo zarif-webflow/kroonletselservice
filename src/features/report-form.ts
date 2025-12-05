@@ -5,6 +5,7 @@ import { isGTMLoaded } from "@/utils/dataLayer/checkGTM";
 import { captureException, initSentry } from "@/utils/sentry";
 
 const formId = "#wf-form-Multi-Step---Report-Damage";
+const API_TIMEOUT = 7000;
 
 type ApiFormData = {
   name: string;
@@ -25,6 +26,9 @@ const getFormData = async (
   responseId: string,
   apiURL: string
 ): Promise<ApiFormData | ErrorData> => {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), API_TIMEOUT);
+
   try {
     const response = await fetch(`${apiURL}`, {
       method: "POST",
@@ -32,7 +36,10 @@ const getFormData = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ formResponseId: responseId }),
+      signal: timeoutController.signal,
     });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       try {
         const data = await response.json();
@@ -91,6 +98,17 @@ const getFormData = async (
 
     return data as { name: string; email: string; phoneNumber: string };
   } catch (error: unknown) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      const errorMessage = prepareErrorMessage(
+        responseId,
+        408,
+        "While fetching: " + `Request timed out (${API_TIMEOUT}ms)`
+      );
+      return { message: errorMessage, error: new Error(errorMessage, { cause: error }) };
+    }
+
     const errorMessage = error instanceof Error ? error.message : String(error);
     const finalErrorMessage = prepareErrorMessage(
       responseId,
