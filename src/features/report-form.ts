@@ -2,10 +2,12 @@ import { wait } from "@finsweet/ts-utils";
 import { getActiveScript } from "@taj-wf/utils";
 
 import { isGTMLoaded } from "@/utils/dataLayer/checkGTM";
+import { fetchWithRetry } from "@/utils/fetchWithRetry";
 import { captureException, initSentry } from "@/utils/sentry";
 
 const formId = "#wf-form-Multi-Step---Report-Damage";
-const API_TIMEOUT = 7000;
+const API_TIMEOUT = 5000;
+const API_RETRIES = 3;
 
 type ApiFormData = {
   name: string;
@@ -26,18 +28,27 @@ const getFormData = async (
   responseId: string,
   apiURL: string
 ): Promise<ApiFormData | ErrorData> => {
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(() => timeoutController.abort(), API_TIMEOUT);
-
   try {
-    const response = await fetch(`${apiURL}?formResponseId=${responseId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      signal: timeoutController.signal,
-    });
-    clearTimeout(timeoutId);
+    const response = await fetchWithRetry(
+      (signal) =>
+        fetch(`${apiURL}?formResponseId=${responseId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal,
+        }),
+      { timeout: API_TIMEOUT, retries: API_RETRIES }
+    );
+
+    if (response === null) {
+      const errorMessage = prepareErrorMessage(
+        responseId,
+        408,
+        "While fetching: " + `Request timed out (${API_TIMEOUT}ms). Tried ${API_RETRIES} times.`
+      );
+      return { message: errorMessage, error: new Error(errorMessage) };
+    }
 
     if (!response.ok) {
       try {
@@ -97,17 +108,6 @@ const getFormData = async (
 
     return data as { name: string; email: string; phoneNumber: string };
   } catch (error: unknown) {
-    clearTimeout(timeoutId);
-
-    if (error instanceof DOMException && error.name === "AbortError") {
-      const errorMessage = prepareErrorMessage(
-        responseId,
-        408,
-        "While fetching: " + `Request timed out (${API_TIMEOUT}ms)`
-      );
-      return { message: errorMessage, error: new Error(errorMessage, { cause: error }) };
-    }
-
     const errorMessage = error instanceof Error ? error.message : String(error);
     const finalErrorMessage = prepareErrorMessage(
       responseId,
