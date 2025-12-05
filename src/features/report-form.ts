@@ -30,12 +30,11 @@ const getFormData = async (
   const timeoutId = setTimeout(() => timeoutController.abort(), API_TIMEOUT);
 
   try {
-    const response = await fetch(`${apiURL}`, {
-      method: "POST",
+    const response = await fetch(`${apiURL}?formResponseId=${responseId}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ formResponseId: responseId }),
       signal: timeoutController.signal,
     });
     clearTimeout(timeoutId);
