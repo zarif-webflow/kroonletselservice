@@ -1,6 +1,6 @@
 import { afterWebflowReady, getMultipleHtmlElements } from "@taj-wf/utils";
 
-const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign"] as const;
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content"] as const;
 type UtmKey = (typeof UTM_KEYS)[number];
 type UtmParams = Partial<Record<UtmKey, string>>;
 
